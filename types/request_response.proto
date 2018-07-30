@@ -1,0 +1,30 @@
+syntax = "proto3";
+ 
+package types;
+ 
+// The Friends service definition.
+service Friends {
+  rpc KnowFriends (SessionRequest) returns (SessionReply) {}
+}
+
+// The reauest message
+message SessionRequest {
+    string userID1 = 1;
+    string userID2 = 2;
+
+    int64 startDate = 3;
+    int64 endDate = 4;
+
+    double latitude = 5;
+    double longitude = 6;
+}
+ 
+// The response message
+message SessionReply {
+   string bestFriend = 1;
+   repeated string crush = 2;
+   string mostSeen = 3;
+   string mutualLove = 4;
+}
+
+ 
