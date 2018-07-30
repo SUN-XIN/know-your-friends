@@ -48,7 +48,7 @@ Save the result of day in DB, we can then use it as checkpoint when server resta
 1.  Server receives 1 session {user1,user2,startDate,endDate,lat,lng}  
 2.  Check if user1's places is in local cache (get from DB if not)  
 3.  Check if this session is in any of user1's places, save the result in `isIn`  
-4.  Put in the table SessionIntegrate whose PRIMARY KEY is `use_id_1 + day`  
+4.  Put in the table SessionIntegrate whose PRIMARY KEY is `use_id_1 + use_id_2 + day`  
 5.  Check if there is previous result for user1 in local cache    
 6.  check MostSeen anyway, and if isIn is false, check BestFriend     
 7.  not in cahce + not in DB -> first session of the day    
@@ -60,10 +60,12 @@ Save the result of day in DB, we can then use it as checkpoint when server resta
     if user1's MostSeen found (is not the same day of this session)  -> 
     recalculate the result by fetching data from DB, then update cache, update result in DB  
 9.  Check Crush  
-    in home (either user1 or user2) + session is more than 6h + in night -> Crush
-    else, do nothing, keep the previous result   
+    in home (either user1 or user2) + session is more than 6h + in night -> put/update in the table session_crush, whose PRIMARY KEY is `(user_id_owner + day)`  
+    then check NB sessions in the last 7 days  
 
 # Test client (/client_simple/main.go)
+* CheckInitData  
+when DB is empty, init some sessions  
 * CheckWorkflowCrush  
 create 3 sessions which are: in place (home) + at night + but duration is less than 6h ->   
 only MostSeen in the response  
@@ -81,6 +83,19 @@ MostSeen with the new friendID in the response
 create 1 session which is: the first friendID, much more duration + another day + in places + not in night ->  
 MostSeen with the first friendID in the response 
 * CheckWorkflowBestFriends
+create 1 session which is: out places, not in night ->  
+MostSeen/BestFriend in the response   
+create 1 session which is: another friend, more duration + another day + out places + not in night ->  
+MostSeen/BestFriend with the new friendID in the response  
+create 1 session which is: friends, more duration + another day + out places + not in night ->  
+MostSeen/BestFriend with the first friendID in the response 
+* CheckMutualLove  
+1/  owner spends 100s with friend1   
+2/  friend2 spends 300s with friend3  
+3.1/ owner spends 200s with friend2  
+3.2/ friend2 spends 200s with owner  
+4.1/ owner spends 200s with friend2  
+4.2/ friend2 spends 200s with owner  
 
 # Optimisation/TODO  
 * time zone  
