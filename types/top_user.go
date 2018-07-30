@@ -27,7 +27,7 @@ type TopUser struct {
 
 // result of MostSeen/BestFriend
 func NewTopUserByDuration(ownerID, friendID string, start, end int64, isInPlace bool) *TopUser {
-	dur := int32(start - end)
+	dur := int32(end - start)
 	tu := &TopUser{
 		OwnerID:         ownerID,
 		Day:             helper.GetBeginningOfDay(time.Unix(end, 0)),
