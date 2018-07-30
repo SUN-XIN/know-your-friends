@@ -26,10 +26,121 @@ func main() {
 
 	ctx := context.Background()
 
+	CheckMutualLove(ctx, friendsClient)
 	CheckWorkflowCrush(ctx, friendsClient)
-	//CheckInitData(ctx, friendsClient)
-	//CheckWorkflowBestFriends(ctx, friendsClient)
-	//CheckWorkflowMostSeen(ctx, friendsClient)
+	CheckInitData(ctx, friendsClient)
+	CheckWorkflowBestFriends(ctx, friendsClient)
+	CheckWorkflowMostSeen(ctx, friendsClient)
+}
+
+func CheckMutualLove(ctx context.Context, friendsClient types.FriendsClient) {
+	// session 1: owner spends 100s with friend1
+	ownerID := fmt.Sprintf("testuser%dplaces", time.Now().Unix())
+	req := types.SessionRequest{
+		UserID1:   ownerID,
+		UserID2:   "testuserfriend1",
+		StartDate: 1532566800, // 26/7/2018 03:00:00
+		EndDate:   1532566900,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err := friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	//log.Printf("(%+v)", resp)
+	time.Sleep(2 * time.Second)
+
+	// session 2: friend2 spends 300s with friend3
+	friendID2 := fmt.Sprintf("testuser%d2places", time.Now().Unix())
+	friendID3 := fmt.Sprintf("testuser2%d3places", time.Now().Unix())
+	req = types.SessionRequest{
+		UserID1:   friendID2,
+		UserID2:   friendID3,
+		StartDate: 1532567000,
+		EndDate:   1532567300,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err = friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	//log.Printf("(%+v)", resp)
+	time.Sleep(2 * time.Second)
+
+	// session 3.1: owner spends 200s with friend2
+	req = types.SessionRequest{
+		UserID1:   ownerID,
+		UserID2:   friendID2,
+		StartDate: 1532567500,
+		EndDate:   1532567700,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err = friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	time.Sleep(2 * time.Second)
+
+	// session 3.2: friend2 spends 200s with owner
+	req = types.SessionRequest{
+		UserID1:   friendID2,
+		UserID2:   ownerID,
+		StartDate: 1532567500,
+		EndDate:   1532567700,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err = friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	//log.Printf("(%+v)", resp)
+	time.Sleep(2 * time.Second)
+
+	// session 4.1: owner spends 200s with friend2
+	req = types.SessionRequest{
+		UserID1:   ownerID,
+		UserID2:   friendID2,
+		StartDate: 1532567800,
+		EndDate:   1532568000,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err = friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	//log.Printf("(%+v)", resp)
+	time.Sleep(2 * time.Second)
+
+	// session 4.2: friend2 spends 200s with owner
+	req = types.SessionRequest{
+		UserID1:   friendID2,
+		UserID2:   ownerID,
+		StartDate: 1532567800,
+		EndDate:   1532568000,
+		Latitude:  48.823305,
+		Longitude: 2.361281,
+	}
+	resp, err = friendsClient.KnowFriends(ctx, &req)
+	if err != nil {
+		log.Fatalf("Failed KnowFriends: %v", err)
+	}
+	//log.Printf("(%+v)", resp)
+	if resp.MutualLove == ownerID {
+		log.Printf("TestMutualLove ok")
+	} else {
+		log.Printf("TestMutualLove not ok: %+v", *resp)
+	}
+
+	//log.Printf("(%+v)", resp)
+	//log.Printf("(%s)", ownerID)
+	//log.Printf("(%s)", friendID2)
+	//log.Printf("(%s)", friendID3)
+	time.Sleep(2 * time.Second)
 }
 
 func CheckWorkflowCrush(ctx context.Context, friendsClient types.FriendsClient) {
