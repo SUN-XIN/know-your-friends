@@ -1,26 +1,26 @@
 # Time Organization  
-* Day1: understand subject (no anything about technique)  
+* Phase1: understand subject (no anything about technique)  
 Understand the objective, especially the definition of categories: 
     Best Friend, Crush, Most seen and Mutual Love.
 Imagine all the use cases, and think about the exceptional case for each category.
 
-* Day2: basic thinking about technique  
+* Phase2: basic thinking about technique  
 Tool to use (Protobuf + gRPC + Kafka)
 Input/Output
 DB kind (Redis + ScyllaDB)
 known/unknown element
 
-* Day3: explore the unknown element (Protobuf + gRPC)  
+* Phase3: explore the unknown element (Protobuf + gRPC)  
 
-* Day4: explore the unknown element (ScyllaDB)  
+* Phase4: explore the unknown element (ScyllaDB)  
 
-* Day5: pseudo code (frame) + find out some difficulties   
+* Phase5: pseudo code (frame) + find out some difficulties   
 
-* Day6: resolve the difficulties and fill the code  
+* Phase6: resolve the difficulties and fill the code  
 
-* Day7: finish the code and test with the different work-flows  
+* Phase7: finish the code and test with the different work-flows  
 
-* Day8: Doc
+* Phase8: Doc
 
 # Analyze subject  
 * relation of categories  
@@ -30,10 +30,9 @@ Mutual Love: "Most seen" + each other
 Crush: in home (geo) + in night (time) + count (last rolling N days)  
 
 * property of categories  
-mutual: if A is in a category of B, so B must also be in in the same category of A  
+mutual: if A is in a category of B, so B must also be in in the same category of A ->  
 Crush, Mutual Love  
-
-independent  
+independent ->    
 Most seen, Best Friend  
 
 # DB architecture   
@@ -64,6 +63,24 @@ Save the result of day in DB, we can then use it as checkpoint when server resta
     in home (either user1 or user2) + session is more than 6h + in night -> Crush
     else, do nothing, keep the previous result   
 
+# Test client (/client_simple/main.go)
+* CheckWorkflowCrush  
+create 3 sessions which are: in place (home) + at night + but duration is less than 6h ->   
+only MostSeen in the response  
+create 3 sessions which are: in place (home) + duration 6h30, but not at night ->   
+only MostSeen in the response  
+create 3 sessions which are: in place (home) + at night + duration 6h30 ->   
+MostSeen and Crush in the response  
+create 3 sessions which are: another friendID + in place (home) + at night + duration 6h30 ->   
+MostSeen and Crush(2 diffenrent friend IDs) in the response  
+* CheckWorkflowMostSeen
+create 1 session which is: int places, not in night ->  
+only MostSeen in the response   
+create 1 session which is: another friendID, more duration + another day + in places + not in night ->  
+MostSeen with the new friendID in the response  
+create 1 session which is: the first friendID, much more duration + another day + in places + not in night ->  
+MostSeen with the first friendID in the response 
+* CheckWorkflowBestFriends
 
 # Optimisation/TODO  
 * time zone  
