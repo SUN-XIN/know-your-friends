@@ -1,0 +1,35 @@
+RUN SERVER DB
+
+1/ run scylladb local with index
+docker run --name zenly -d scylladb/scylla --experimental 1
+1/ bis run scylladb local with comf
+docker run --name some-scylla --volume PATH/master_scylla.yaml:/etc/scylla/scylla.yaml -d scylladb/scylla
+ex:
+    docker run --name zenly-scylla --volume /home/xin/my_go_prog/src/github.com/SUN-XIN/know-your-friends/scylladb/master_scylla.yaml:/etc/scylla/scylla.yaml -d scylladb/scylla
+
+2/ check status
+docker exec -it zenly-scylla nodetool status
+
+3/ cqlsh
+docker exec -it zenly-scylla cqlsh
+
+4/ restart
+docker exec -it zenly-scylla supervisorctl restart scylla
+
+CREATE DB
+1/ create KEYSPACE
+cqlsh> CREATE KEYSPACE IF NOT EXISTS friends WITH REPLICATION = {'class': 'SimpleStrategy','replication_factor':1};
+2/ use friends;
+3/ create table session_integrate
+CREATE TABLE session_integrate(user_id_owner varchar, user_id_friend varchar, total_duration int, day int, is_in_sign_place boolean, PRIMARY KEY (user_id_owner, user_id_friend, day));
+4/ insert 1 line
+INSERT INTO session_integrate (user_id_owner, user_id_friend, total_duration, day, type, is_in_sign_place) VALUES ("xin", "toto", 60, 1532822400, 1, true)
+5/ query
+select * from session_integrate where user_id_owner='xin' and user_id_friend='toto' and day=1532822400 and type=1;
+
+6/ create table top_user
+CREATE TABLE top_user(owner_id varchar, day int, top_user_id_out_place varchar, top_user_duration_out_place int, to_user_id varchar, top_user_duration int, crush_friend_ids set<varchar>, PRIMARY KEY (owner_id, day));
+
+7/ create table session_crush
+CREATE TABLE session_crush(user_id_owner varchar, user_ids_friend set<varchar>, day int, PRIMARY KEY (user_id_owner, day));
+ 
