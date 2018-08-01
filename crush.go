@@ -12,29 +12,42 @@ import (
 
 func (s *server) GetCrush(ownerID string, day int64, resp *types.UserFriendsReply) error {
 	// already processed today ?
-	tu := types.TopUser{
-		OwnerID: ownerID,
-		Day:     day,
-	}
-	err := scylladb.GetTopUser(s.dbSession, &tu)
-	switch {
-	case (err == nil && len(tu.CrushFriendIDs) > 0):
-		resp.Crush = tu.CrushFriendIDs
-		return nil
-	case err == scylladb.ErrNotFound ||
-		(err == nil && len(tu.CrushFriendIDs) == 0):
-		resp.Crush, err = s.CheckAndPutCrush(&types.SessionCrush{
-			UserIDOwner: ownerID,
-			Day:         day,
-		})
-		if err != nil {
-			return fmt.Errorf("Failed CheckAndPutCrush: %+v", err)
+	/*
+		tu := types.TopUser{
+			OwnerID: ownerID,
+			Day:     day,
 		}
+		err := scylladb.GetTopUser(s.dbSession, &tu)
+		switch {
+		case (err == nil && len(tu.CrushFriendIDs) > 0):
+			resp.Crush = tu.CrushFriendIDs
+			return nil
+		case err == scylladb.ErrNotFound ||
+			(err == nil && len(tu.CrushFriendIDs) == 0):
+			resp.Crush, err = s.CheckAndPutCrush(&types.SessionCrush{
+				UserIDOwner: ownerID,
+				Day:         day,
+			})
+			if err != nil {
+				return fmt.Errorf("Failed CheckAndPutCrush: %+v", err)
+			}
 
-		return nil
-	default:
-		return err
+			return nil
+		default:
+			return err
+		}
+	*/
+
+	var err error
+	resp.Crush, err = s.CheckAndPutCrush(&types.SessionCrush{
+		UserIDOwner: ownerID,
+		Day:         day,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed CheckAndPutCrush: %+v", err)
 	}
+
+	return nil
 }
 
 func (s *server) CheckCrush(ownerID, friendID string,
