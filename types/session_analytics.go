@@ -37,7 +37,8 @@ type Payload struct {
 
 // format: UserIDOwner-UserIDFriend-Day-Type
 func (si *SessionIntegrate) ScyllaDBKey() string {
-	return fmt.Sprintf("%s%s%d%s%d", si.UserIDOwner, SCYLLA_KEY_SEPARATOR,
+	return fmt.Sprintf("%s%s%s%s%d", si.UserIDOwner, SCYLLA_KEY_SEPARATOR,
+		si.UserIDFriend, SCYLLA_KEY_SEPARATOR,
 		si.Day)
 }
 

@@ -11,13 +11,12 @@ func TestScyllaDBKey(t *testing.T) {
 
 		TotalDuration: 100,
 		Day:           1532725644,
-		Type:          SessionTypeMostSeen,
 
 		IsInSignPlace: true,
 	}
 
 	k := si.ScyllaDBKey()
-	kOK := "toto-tutu-1532725644-1"
+	kOK := "toto-tutu-1532725644"
 	if k != kOK {
 		t.Errorf("Expect key %s, but get %s", kOK, k)
 	}
