@@ -41,7 +41,7 @@ func PutSessionDetail(session *gocql.Session, sd *types.SessionDetail) error {
 	INSERT INTO %s (user_id_1,user_id_2,start_date,end_date,lat,lng) 
 	VALUES (?, ?, ?, ?, ?, ?)`, types.SessionDetailTableName),
 		sd.UserID1,
-		sd.UserID1,
+		sd.UserID2,
 		sd.StartDate,
 		sd.EndDate,
 		sd.Lat,
@@ -49,10 +49,14 @@ func PutSessionDetail(session *gocql.Session, sd *types.SessionDetail) error {
 }
 
 func CreateSessionDetail(session *gocql.Session, sd *types.SessionDetail) error {
-	// transaction
 	err := GetSessionDetail(session, sd)
-	if err == nil {
+	switch err {
+	case nil:
 		return ErrAlreadyExist
+	case ErrNotFound:
+		// ok
+	default:
+		return err
 	}
 
 	log.Printf("Create -> get ok, not found")
