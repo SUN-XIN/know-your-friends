@@ -12,7 +12,8 @@ const (
 )
 
 var (
-	ErrNotFound = fmt.Errorf("EntityNotFound")
+	ErrNotFound     = fmt.Errorf("EntityNotFound")
+	ErrAlreadyExist = fmt.Errorf("EntityAlreadyExists")
 )
 
 func CreateConnect() (*gocql.Session, error) {

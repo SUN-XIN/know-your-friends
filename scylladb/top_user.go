@@ -66,16 +66,18 @@ func UpdateTopUserCrush(session *gocql.Session, ownerID, friendID string, day in
 		return nil, err
 	}
 
-	alreadyIn := false
-	for _, fID := range tu.CrushFriendIDs {
-		if fID == friendID {
-			alreadyIn = true
-			break
+	if friendID != "" {
+		alreadyIn := false
+		for _, fID := range tu.CrushFriendIDs {
+			if fID == friendID {
+				alreadyIn = true
+				break
+			}
 		}
-	}
 
-	if !alreadyIn {
-		tu.CrushFriendIDs = append(tu.CrushFriendIDs, friendID)
+		if !alreadyIn {
+			tu.CrushFriendIDs = append(tu.CrushFriendIDs, friendID)
+		}
 	}
 
 	vals := make([]string, 0, len(tu.CrushFriendIDs))

@@ -9,6 +9,37 @@ import (
 	"github.com/SUN-XIN/know-your-friends/types"
 )
 
+func QuerySessionIntegrate(session *gocql.Session, ownerID string, day int64) ([]*types.SessionIntegrate, error) {
+	var res []*types.SessionIntegrate
+	iter := session.Query(fmt.Sprintf(`
+	SELECT user_id_owner,user_id_friend,day,is_in_sign_place,total_duration 
+	FROM %s 
+	WHERE user_id_owner=? AND day=? ALLOW FILTERING;`, types.SessionIntegrateTableName),
+		ownerID, day).Iter()
+
+	ok := true
+	for ok {
+		var si types.SessionIntegrate
+		ok = iter.Scan(&si.UserIDOwner,
+			&si.UserIDFriend,
+			&si.Day,
+			&si.IsInSignPlace,
+			&si.TotalDuration)
+		if !ok {
+			break
+		}
+		res = append(res, &si)
+
+		log.Printf("query get %s", si.UserIDFriend)
+	}
+	err := iter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func GetSessionIntegrate(session *gocql.Session, si *types.SessionIntegrate) error {
 	iter := session.Query(fmt.Sprintf(`
 	SELECT user_id_owner,user_id_friend,day,is_in_sign_place,total_duration 
@@ -73,32 +104,3 @@ func UpdateSessionIntegrate(session *gocql.Session, si *types.SessionIntegrate, 
 
 	return nil
 }
-
-//////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////    SessionDetail       /////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-/*
-func GetSessionDetail(sd *types.SessionDetail) error {
-	sd.ScyllaDBKey()
-	return nil
-}
-
-func PutSessionDetail(sd *types.SessionDetail) error {
-	sd.ScyllaDBKey()
-	return nil
-}
-
-func CreateSessionDetail(sd *types.SessionDetail) error {
-	// transaction
-	err := GetSessionDetail(sd)
-	if err == nil {
-		return fmt.Errorf("Already existed")
-	}
-	return PutSessionDetail(sd)
-}
-
-func FetchAllSessionDetailOfDay(day int64) ([]*types.SessionDetail, error) {
-	// Query with: UserIDOwner + UserIDFriend + StartDate
-	return nil, nil
-}
-*/
