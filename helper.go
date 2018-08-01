@@ -42,23 +42,3 @@ func CalculDurationWithUser(dbSess *gocql.Session, ownerID, friendID string, inP
 
 	return
 }
-
-/*
-// fetch all session detail from scylladb
-// then calculate sum of duration
-func CalculDurationTotalOfDay(day int64) (durationInPlace, durationAll int32, err error) {
-	var sessions []*types.SessionDetail
-	sessions, err = scylladb.FetchAllSessionDetailOfDay(day)
-	if err != nil {
-		return
-	}
-
-	for _, s := range sessions {
-		durationAll = durationAll + int32(s.EndDate-s.StartDate)
-		if s.IsInSignPlace {
-			durationInPlace = durationInPlace + int32(s.EndDate-s.StartDate)
-		}
-	}
-	return
-}
-*/
