@@ -8,6 +8,7 @@ const (
 	SessionIntegrateTableName = "session_integrate"
 	SessionTopUserTableName   = "top_user"
 	SessionCrushTableName     = "session_crush"
+	SessionDetailTableName    = "session_detail"
 )
 
 //////////////////////////////////////////////////////////////////
@@ -57,25 +58,49 @@ func (sc *SessionCrush) ScyllaDBKey() string {
 		sc.Day)
 }
 
-/*
 // all sessions
 type SessionDetail struct {
-	UserIDOwner  string
-	UserIDFriend string
+	UserID1 string
+	UserID2 string
 
 	StartDate int64
 	EndDate   int64
 
 	Lat float64
 	Lng float64
-
-	IsInSignPlace bool // if in my significant place
 }
 
-// format: UserIDOwner-UserIDFriend-IsInSignPlace
+// Check if empty for each field
+// UserID1 should always be greater than UserID2
+func (sd *SessionDetail) Validate() error {
+	if sd.UserID1 == sd.UserID2 {
+		return fmt.Errorf("UserIDs must not be diffenrent")
+	}
+
+	if sd.UserID1 == "" || sd.UserID2 == "" {
+		return fmt.Errorf("UserID must not be empty")
+	}
+
+	if sd.StartDate <= 0 || sd.EndDate <= 0 ||
+		sd.EndDate <= sd.StartDate {
+		return fmt.Errorf("Please check startDate/EndDate")
+	}
+
+	if sd.Lat < -90.0 || sd.Lat > 90.0 ||
+		sd.Lng < -180.0 || sd.Lng > 180.0 {
+		return fmt.Errorf("Please check Lat/Lng")
+	}
+
+	if sd.UserID1 < sd.UserID2 {
+		sd.UserID1, sd.UserID2 = sd.UserID2, sd.UserID1
+	}
+
+	return nil
+}
+
+// format: UserIDOwner-UserIDFriend-StartDate
 func (sd *SessionDetail) ScyllaDBKey() string {
-	return fmt.Sprintf("%s%s%s%s%d", sd.UserIDOwner, SCYLLA_KEY_SEPARATOR,
-		sd.UserIDFriend, SCYLLA_KEY_SEPARATOR,
+	return fmt.Sprintf("%s%s%s%s%d", sd.UserID1, SCYLLA_KEY_SEPARATOR,
+		sd.UserID2, SCYLLA_KEY_SEPARATOR,
 		sd.StartDate)
 }
-*/

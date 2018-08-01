@@ -4,27 +4,20 @@ package types;
  
 // The Friends service definition.
 service Friends {
-  rpc KnowFriends (SessionRequest) returns (SessionReply) {}
+  rpc KnowFriends (UserFriendsRequest) returns (UserFriendsReply) {}
 }
 
 // The reauest message
-message SessionRequest {
-    string userID1 = 1;
-    string userID2 = 2;
-
-    int64 startDate = 3;
-    int64 endDate = 4;
-
-    double latitude = 5;
-    double longitude = 6;
+message UserFriendsRequest {
+    string userID = 1; 
 }
  
 // The response message
-message SessionReply {
-   string bestFriend = 1;
-   repeated string crush = 2;
-   string mostSeen = 3;
-   string mutualLove = 4;
+message UserFriendsReply {
+   string bestFriend = 1; 
+   string mostSeen = 3; 
+   repeated string crush = 5;  
+   string mutualLove = 7; 
 }
 
  
