@@ -1,26 +1,28 @@
 # Time Organization  
 * Phase1: understand subject (no anything about technique)  
-Understand the objective, especially the definition of categories: 
-    Best Friend, Crush, Most seen and Mutual Love.
+Understand the objective, especially the definition of categories:   
+    Best Friend, Crush, Most seen and Mutual Love.  
 Imagine all the use cases, and think about the exceptional case for each category.
 
 * Phase2: basic thinking about technique  
-Tool to use (Protobuf + gRPC + Kafka)
-Input/Output
-DB kind (Redis + ScyllaDB)
-known/unknown element
+Tool to use (Protobuf + gRPC + Kafka)  
+Input/Output  
+DB kind (Redis + ScyllaDB)  
+known/unknown element  
 
-* Phase3: explore the unknown element (Protobuf + gRPC)  
+* Phase3: explore the unknown element (Protobuf + gRPC)   
 
-* Phase4: explore the unknown element (ScyllaDB)  
+* Phase4: explore the unknown element (ScyllaDB)   
 
-* Phase5: pseudo code (frame) + find out some difficulties   
+* Phase5: explore the unknown element (kafka producer/consumer)  
 
-* Phase6: resolve the difficulties and fill the code  
+* Phase6: pseudo code (frame) + find out some difficulties   
 
-* Phase7: finish the code and test with the different work-flows  
+* Phase7: resolve the difficulties and fill the code  
 
-* Phase8: Doc
+* Phase8: finish the code and test with the different work-flows  
+
+* Phase9: Doc  
 
 # Analyze subject  
 * relation of categories  
