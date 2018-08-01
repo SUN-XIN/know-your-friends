@@ -59,15 +59,41 @@ func (s *server) GetBestFriendAndMostSeen(ownerID string, day int64, resp *types
 	}
 
 	log.Printf("%d friends, %d friends out place,", len(mostSeenDur), len(bestFriendsDur))
-	log.Printf("sort before: %v", mostSeenDur)
+	cacheKey := helper.GenerateCacheKey(ownerID, day)
 
-	resBestFriends := helper.SortMap(bestFriendsDur)
-	resMostSeen := helper.SortMap(mostSeenDur)
+	tu := types.TopUser{
+		OwnerID: ownerID,
+		Day:     day,
+	}
+	updated := false
+	if len(bestFriendsDur) > 0 {
+		resBestFriends := helper.SortMap(bestFriendsDur)
+		resp.BestFriend = resBestFriends[0].Key
 
-	log.Printf("sort res: %v", resMostSeen)
+		tu.TopUserIDOutPlace = resBestFriends[0].Key
+		tu.TopUserDurationOutPlace = resBestFriends[0].Value
+		updated = true
+	}
 
-	resp.BestFriend = resBestFriends[0].Key
-	resp.MostSeen = resMostSeen[0].Key
+	if len(mostSeenDur) > 0 {
+		resMostSeen := helper.SortMap(mostSeenDur)
+		resp.MostSeen = resMostSeen[0].Key
+
+		tu.TopUserID = resMostSeen[0].Key
+		tu.TopUserDuration = resMostSeen[0].Value
+		updated = true
+	}
+
+	if updated {
+		// put in cache
+		s.cacheUserTop.Add(cacheKey, &tu)
+
+		// put in db
+		err := scylladb.PutTopUser(s.dbSession, &tu)
+		if err != nil {
+			return fmt.Errorf("Failed PutTopUser: %+v", err)
+		}
+	}
 
 	return nil
 }
@@ -103,7 +129,7 @@ func (s *server) CheckBestFriendAndMostSeen(ownerID, friendID string,
 		return fmt.Errorf("Failed UpdateSessionIntegrate: %+v", err)
 	}
 
-	cacheKey := fmt.Sprintf("%s-%d", ownerID, sessDay)
+	cacheKey := helper.GenerateCacheKey(ownerID, sessDay)
 
 	// need to re-calculate ?
 	var topUser *types.TopUser

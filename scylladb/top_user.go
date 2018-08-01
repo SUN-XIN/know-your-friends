@@ -55,7 +55,7 @@ func PutTopUser(session *gocql.Session, tu *types.TopUser) error {
 		tu.TopUserDuration).Exec()
 }
 
-func UpdateTopUserCrush(session *gocql.Session, ownerID, friendID string, day int64) (*types.TopUser, error) {
+func UpdateTopUserCrush(session *gocql.Session, ownerID string, friendIDs []string, day int64) (*types.TopUser, error) {
 	tu := &types.TopUser{
 		OwnerID: ownerID,
 		Day:     day,
@@ -66,20 +66,7 @@ func UpdateTopUserCrush(session *gocql.Session, ownerID, friendID string, day in
 		return nil, err
 	}
 
-	if friendID != "" {
-		alreadyIn := false
-		for _, fID := range tu.CrushFriendIDs {
-			if fID == friendID {
-				alreadyIn = true
-				break
-			}
-		}
-
-		if !alreadyIn {
-			tu.CrushFriendIDs = append(tu.CrushFriendIDs, friendID)
-		}
-	}
-
+	tu.CrushFriendIDs = friendIDs
 	vals := make([]string, 0, len(tu.CrushFriendIDs))
 	for _, f := range tu.CrushFriendIDs {
 		vals = append(vals, fmt.Sprintf("'%s'", f))
@@ -90,5 +77,7 @@ func UpdateTopUserCrush(session *gocql.Session, ownerID, friendID string, day in
 	WHERE owner_id=? AND day=?`, types.SessionTopUserTableName, strings.Join(vals, ",")),
 		tu.OwnerID,
 		tu.Day).Exec()
+
+	log.Printf("write new top user in db: %+v", *tu)
 	return tu, err
 }

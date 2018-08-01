@@ -17,15 +17,16 @@ func (s *server) GetCrush(ownerID string, day int64, resp *types.UserFriendsRepl
 		Day:     day,
 	}
 	err := scylladb.GetTopUser(s.dbSession, &tu)
-	switch err {
-	case nil:
+	switch {
+	case (err == nil && len(tu.CrushFriendIDs) > 0):
 		resp.Crush = tu.CrushFriendIDs
 		return nil
-	case scylladb.ErrNotFound:
-		err = s.CheckAndPutCrush(&types.SessionCrush{
+	case err == scylladb.ErrNotFound ||
+		(err == nil && len(tu.CrushFriendIDs) == 0):
+		resp.Crush, err = s.CheckAndPutCrush(&types.SessionCrush{
 			UserIDOwner: ownerID,
 			Day:         day,
-		}, "")
+		})
 		if err != nil {
 			return fmt.Errorf("Failed CheckAndPutCrush: %+v", err)
 		}
@@ -70,7 +71,7 @@ func (s *server) CheckCrush(ownerID, friendID string,
 		// TODO: use TopUser (cache)
 
 		// check Crush
-		err = s.CheckAndPutCrush(sr, friendID)
+		_, err = s.CheckAndPutCrush(sr)
 		if err != nil {
 			return fmt.Errorf("Failed CheckAndPutCrush: %+v", err)
 		}
@@ -82,25 +83,23 @@ func (s *server) CheckCrush(ownerID, friendID string,
 	return nil
 }
 
-func (s *server) CheckAndPutCrush(sr *types.SessionCrush, newFriendID string) error {
-	nights, err := scylladb.CountNights(s.dbSession, sr)
+func (s *server) CheckAndPutCrush(sr *types.SessionCrush) ([]string, error) {
+	fIDs, err := scylladb.CountNights(s.dbSession, sr)
 	if err != nil {
-		return fmt.Errorf("Failed CountNights: %+v", err)
+		return nil, fmt.Errorf("Failed CountNights: %+v", err)
 	}
 
-	if nights < helper.CRUSH_MIN_NIGHTS {
-		log.Printf("CheckCrush: only %d nights", nights)
-		return nil
+	if len(fIDs) == 0 {
+		return nil, nil
 	}
 
 	_, err = scylladb.UpdateTopUserCrush(s.dbSession,
-		sr.UserIDOwner, newFriendID, sr.Day)
+		sr.UserIDOwner, fIDs, sr.Day)
 	if err != nil {
-		return fmt.Errorf("Failed UpdateTopUserCrush: %+v", err)
+		return nil, fmt.Errorf("Failed UpdateTopUserCrush: %+v", err)
 	}
 	log.Printf("CheckCrush: write in db")
-
-	return nil
+	return fIDs, nil
 }
 
 // check if user's Homes are in the cache

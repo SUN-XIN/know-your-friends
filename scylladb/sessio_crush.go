@@ -97,11 +97,13 @@ func PutSessionCrush(session *gocql.Session, sr *types.SessionCrush) error {
 		sr.UserIDOwner, sr.Day).Exec()
 }
 
-func CountNights(session *gocql.Session, si *types.SessionCrush) (int, error) {
+func CountNights(session *gocql.Session, si *types.SessionCrush) ([]string, error) {
 	var err error
 	// how many SessionHomeNight in the last 7 days
 	nb := 0
 	days := helper.GetLastDays(time.Now())
+	mapCrush := make(map[string]int, 100)
+	var ok bool
 	for _, d := range days {
 		pastSession := types.SessionCrush{
 			UserIDOwner: si.UserIDOwner,
@@ -111,11 +113,29 @@ func CountNights(session *gocql.Session, si *types.SessionCrush) (int, error) {
 		err = GetSessionCrush(session, &pastSession)
 		switch err {
 		case nil:
-			nb++
+			for _, fID := range pastSession.FriendsIDs {
+				nb, ok = mapCrush[fID]
+				if ok {
+					nb++
+					mapCrush[fID] = nb
+				} else {
+					mapCrush[fID] = 1
+				}
+			}
 		case ErrNotFound:
 		default:
-			return -1, err
+			return nil, err
 		}
 	}
-	return nb, nil
+
+	res := make([]string, 0, len(mapCrush))
+	for fID, count := range mapCrush {
+		if count >= helper.CRUSH_MIN_NIGHTS {
+			log.Printf("%s is Crush of %s", fID, si.UserIDOwner)
+			res = append(res, fID)
+		}
+	}
+	log.Printf("Total %d Crush of %s", len(res), si.UserIDOwner)
+
+	return res, nil
 }
