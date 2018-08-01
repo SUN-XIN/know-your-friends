@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"fmt"
 	"sort"
 	"time"
 )
@@ -13,6 +14,10 @@ const (
 	CRUSH_DURATION_FROM = 22
 	CRUSH_DURATION_TO   = 8
 )
+
+func GenerateCacheKey(ownerID string, sessDay int64) string {
+	return fmt.Sprintf("%s-%d", ownerID, sessDay)
+}
 
 // return the timestamps for the beginning of each days (for last N days)
 func GetLastDays(startDay time.Time) []int64 {
