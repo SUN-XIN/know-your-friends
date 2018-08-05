@@ -109,6 +109,8 @@ func NewServer() *server {
 	return serv
 }
 
+// check if is new session
+// if session already processed, return ErrAlreadyExist
 func (serv *server) CheckDoubleSession(sd *types.SessionDetail) error {
 	serv.mutex.Lock()
 	defer serv.mutex.Unlock()
@@ -121,6 +123,8 @@ func (serv *server) CheckDoubleSession(sd *types.SessionDetail) error {
 	return scylladb.CreateSessionDetail(serv.dbSession, sd)
 }
 
+// gRPC endpoint
+// return Crush/BestFriend/MostSeen/MutualLove result
 func (serv *server) KnowFriends(ctx context.Context, sess *types.UserFriendsRequest) (*types.UserFriendsReply, error) {
 	log.Printf("receive user %s", sess.UserID)
 
@@ -155,6 +159,8 @@ func (serv *server) KnowFriends(ctx context.Context, sess *types.UserFriendsRequ
 	return &resp, nil
 }
 
+// when receive a new session (by kafka), firstly check if is double session
+// then update Crush/BestFriend/MostSeen result
 func (serv *server) ProcessSession(sess *types.SessionDetail) error {
 	// session too old
 	if sess.EndDate < time.Now().Add(-24*time.Hour*helper.DEFAULT_ROLLING_DAYS).Unix() {

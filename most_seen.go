@@ -10,6 +10,8 @@ import (
 	"github.com/SUN-XIN/know-your-friends/types"
 )
 
+// used by the gRPC endpoint
+// get the BestFriend and MostSeen of the given User
 func (s *server) GetBestFriendAndMostSeen(ownerID string, day int64, resp *types.UserFriendsReply) error {
 	// in cache ?
 	var topUser *types.TopUser
@@ -98,6 +100,8 @@ func (s *server) GetBestFriendAndMostSeen(ownerID string, day int64, resp *types
 	return nil
 }
 
+// used by the kafka endpoint
+// update BestFriend and MostSeen result with a new session
 func (s *server) CheckBestFriendAndMostSeen(ownerID, friendID string,
 	lat, lng float64,
 	startDate, endDate int64) error {

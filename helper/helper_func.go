@@ -41,6 +41,7 @@ func GetBeginningOfDay(d time.Time) int64 {
 		time.UTC).Unix()
 }
 
+// check if in the night
 func IsInPeriod(start, end int64) bool {
 	// TODO: use user's time zone ?
 	startDate := time.Unix(start, 0).UTC()
@@ -69,6 +70,7 @@ func IsInPeriod(start, end int64) bool {
 	}
 }
 
+// sort a map by by value
 func SortMap(input map[string]int32) PairList {
 	pl := make(PairList, len(input))
 	i := 0

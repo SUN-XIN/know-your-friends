@@ -11,6 +11,8 @@ import (
 	"github.com/SUN-XIN/know-your-friends/types"
 )
 
+// calculate the total duration of user1 and user2 for 
+// BestFriend (out of places) and MostSeen
 func CalculDurationWithUser(dbSess *gocql.Session, ownerID, friendID string, inPlace bool) (totalDurationOut, totalDuration int32, err error) {
 	// get stored SessionIntegrate from ScyllaDB
 	days := helper.GetLastDays(time.Now())

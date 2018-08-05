@@ -10,6 +10,8 @@ import (
 	"github.com/SUN-XIN/know-your-friends/types"
 )
 
+// used by the gRPC endpoint
+// get user's Crush client by the given userID and day
 func (s *server) GetCrush(ownerID string, day int64, resp *types.UserFriendsReply) error {
 	// already processed today ?
 	/*
@@ -50,6 +52,8 @@ func (s *server) GetCrush(ownerID string, day int64, resp *types.UserFriendsRepl
 	return nil
 }
 
+// used by the kafka endpoint
+// update crush result with a new session
 func (s *server) CheckCrush(ownerID, friendID string,
 	startDate, endDate int64,
 	lat, lng float64) error {
@@ -96,6 +100,8 @@ func (s *server) CheckCrush(ownerID, friendID string,
 	return nil
 }
 
+// count the number of night from the day in SessionCrush until 7 days before
+// then update the result to DB if is Crush
 func (s *server) CheckAndPutCrush(sr *types.SessionCrush) ([]string, error) {
 	fIDs, err := scylladb.CountNights(s.dbSession, sr)
 	if err != nil {

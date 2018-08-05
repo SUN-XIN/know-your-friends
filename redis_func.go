@@ -9,6 +9,8 @@ import (
 	"github.com/SUN-XIN/know-your-friends/types"
 )
 
+// return all significant places of the given user
+// FAKE! TODO: get from redis DB
 func GetPlacesByID(userID string) []*types.SignificantPlace {
 	// fake
 	// in home: 48.823305, 2.361281
