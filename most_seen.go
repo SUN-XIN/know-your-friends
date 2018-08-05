@@ -8,6 +8,7 @@ import (
 	"github.com/SUN-XIN/know-your-friends/helper"
 	"github.com/SUN-XIN/know-your-friends/scylladb"
 	"github.com/SUN-XIN/know-your-friends/types"
+	"github.com/gocql/gocql"
 )
 
 // used by the gRPC endpoint
@@ -181,43 +182,10 @@ func (s *server) CheckBestFriendAndMostSeen(ownerID, friendID string,
 	log.Printf("found TopUser in db/cache for %s %s %d: %+v -> check", friendID, ownerID, sessDay)
 
 	// topUser existed
-	var totalDurationOut, totalDuration int32
-
-	// check "Most seen"
-	if topUser.TopUserID == friendID {
-		// update top user
-		topUser.TopUserDuration = topUser.TopUserDuration + dur
-		// put in db
-		err = scylladb.PutTopUser(s.dbSession, topUser)
-		if err != nil {
-			return fmt.Errorf("Failed PutTopUser for %s %s %d: %+v", friendID, ownerID, sessDay, err)
-		}
-		// Most seen -> ok
-		log.Printf("%s is MostSeen (same top user) of %s for day %d", friendID, ownerID, sessDay)
-	} else {
-		// calculate duration with friendID
-		totalDurationOut, totalDuration, err = CalculDurationWithUser(s.dbSession, ownerID, friendID, isIn)
-		if err != nil {
-			return fmt.Errorf("Failed CalculDurationWithUser: %+v", err)
-		}
-
-		// update top user ?
-		if totalDuration > topUser.TopUserDuration {
-			topUser.TopUserID = friendID
-			topUser.TopUserDuration = totalDuration
-
-			// put in db
-			err = scylladb.PutTopUser(s.dbSession, topUser)
-			if err != nil {
-				return fmt.Errorf("Failed PutTopUser for %s %s %d: %+v", friendID, ownerID, sessDay, err)
-			}
-
-			// Most seen -> ok
-			log.Printf("%s is MostSeen (diff top user, update) of %s for day %d", friendID, ownerID, sessDay)
-		} else {
-			// keep stored top user
-			log.Printf("%s is MostSeen (diff top user, keep) of %s for day %d", friendID, ownerID, sessDay)
-		}
+	var totalDurationOut int32
+	totalDurationOut, err = checkMostSeen(s.dbSession, ownerID, friendID, dur, isIn, topUser)
+	if err != nil {
+		return err
 	}
 
 	// check "Best Friend"
@@ -225,23 +193,36 @@ func (s *server) CheckBestFriendAndMostSeen(ownerID, friendID string,
 		log.Printf("%s is BestFriend (keep stored) of %s for day %d", topUser.TopUserIDOutPlace, ownerID, sessDay)
 		return nil
 	}
+	err = checkBestFriend(s.dbSession, ownerID, friendID, dur, totalDurationOut, isIn, topUser)
+	if err != nil {
+		return err
+	}
 
+	// keep top user
+	log.Printf("%s is BestFriend (keep stored) of %s for day %d", topUser.TopUserIDOutPlace, ownerID, sessDay)
+	return nil
+}
+
+// stored BestFriend is the same with friendID -> update in cache/DB
+// if not -> calculate total duration of friendID, then compare with stored duration
+func checkBestFriend(conn *gocql.Session, ownerID, friendID string, dur, totalDurationOut int32, isIn bool, topUser *types.TopUser) error {
+	var err error
 	// not in significant places -> check "Best Friend"
 	if topUser.TopUserIDOutPlace == friendID {
 		// update top user
 		topUser.TopUserDurationOutPlace = topUser.TopUserDurationOutPlace + dur
 		// put in db
-		err = scylladb.PutTopUser(s.dbSession, topUser)
+		err = scylladb.PutTopUser(conn, topUser)
 		if err != nil {
-			return fmt.Errorf("Failed PutTopUser for %s %s %d: %+v", friendID, ownerID, sessDay, err)
+			return fmt.Errorf("Failed PutTopUser for %s %s : %+v", friendID, ownerID, err)
 		}
-		log.Printf("%s is BestFriend (keep stored but update duration) of %s for day %d", friendID, ownerID, sessDay)
+		log.Printf("%s is BestFriend (keep stored but update duration) of %s", friendID, ownerID)
 		return nil
 	}
 
-	if totalDurationOut == 0 {
+	if totalDurationOut <= 0 {
 		// calculate duration with friendID in significant places
-		totalDurationOut, _, err = CalculDurationWithUser(s.dbSession, ownerID, friendID, isIn)
+		totalDurationOut, _, err = CalculDurationWithUser(conn, ownerID, friendID, isIn)
 		if err != nil {
 			return fmt.Errorf("Failed CalculDurationWithUser: %+v", err)
 		}
@@ -252,18 +233,59 @@ func (s *server) CheckBestFriendAndMostSeen(ownerID, friendID string,
 		topUser.TopUserIDOutPlace = friendID
 		topUser.TopUserDurationOutPlace = totalDurationOut
 		// put in db
-		err = scylladb.PutTopUser(s.dbSession, topUser)
+		err = scylladb.PutTopUser(conn, topUser)
 		if err != nil {
-			return fmt.Errorf("Failed PutTopUser for %s %s %d: %+v", friendID, ownerID, sessDay, err)
+			return fmt.Errorf("Failed PutTopUser for %s %s: %+v", friendID, ownerID, err)
 		}
 		// Best Friend -> ok
-		log.Printf("%s is BestFriend (diff) of %s for day %d", friendID, ownerID, sessDay)
-		return nil
+		log.Printf("%s is BestFriend (diff) of %s", friendID, ownerID)
 	}
 
-	// keep top user
-	log.Printf("%s is BestFriend (keep stored) of %s for day %d", topUser.TopUserIDOutPlace, ownerID, sessDay)
 	return nil
+}
+
+// stored MostSeen is the same with friendID -> update in cache/DB
+// if not -> calculate total duration of friendID, then compare with stored duration
+func checkMostSeen(conn *gocql.Session, ownerID, friendID string, dur int32, isIn bool, topUser *types.TopUser) (int32, error) {
+	if topUser.TopUserID == friendID {
+		// update top user
+		topUser.TopUserDuration = topUser.TopUserDuration + dur
+		// put in db
+		err := scylladb.PutTopUser(conn, topUser)
+		if err != nil {
+			return -1, fmt.Errorf("Failed PutTopUser: %+v", err)
+		}
+		// Most seen -> ok
+		log.Printf("%s is MostSeen (same top user) of %s", friendID, ownerID)
+
+		return 0, nil
+	} else {
+		// calculate duration with friendID
+		totalDurationOut, totalDuration, err := CalculDurationWithUser(conn, ownerID, friendID, isIn)
+		if err != nil {
+			return -1, fmt.Errorf("Failed CalculDurationWithUser: %+v", err)
+		}
+
+		// update top user ?
+		if totalDuration > topUser.TopUserDuration {
+			topUser.TopUserID = friendID
+			topUser.TopUserDuration = totalDuration
+
+			// put in db
+			err = scylladb.PutTopUser(conn, topUser)
+			if err != nil {
+				return -1, fmt.Errorf("Failed PutTopUser for %s %s: %+v", friendID, ownerID, err)
+			}
+
+			// Most seen -> ok
+			log.Printf("%s is MostSeen (diff top user, update) of %s", friendID, ownerID)
+		} else {
+			// keep stored top user
+			log.Printf("%s is MostSeen (diff top user, keep) of %s", friendID, ownerID)
+		}
+
+		return totalDurationOut, nil
+	}
 }
 
 // check if user's Significant Places are in the cache
